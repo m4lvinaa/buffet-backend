@@ -1,7 +1,8 @@
-🧾 Backend: Configuración del entorno de desarrollo  
 Este documento resume las tareas realizadas durante el Sprint Backlog - Semana 1 del proyecto de sistema de pedidos para el buffet universitario, enfocadas exclusivamente en el backend.
 
-🎯 Objetivo del Sprint  
+🧾 Configuración del entorno de desarrollo  
+
+🎯 Objetivo de la tarea  
 - Configurar entorno de desarrollo  
 - Instalar y configurar frameworks/librerías necesarias para el backend  
 - Definir estructura de carpetas para organizar el proyecto  
@@ -28,16 +29,15 @@ Este documento resume las tareas realizadas durante el Sprint Backlog - Semana 1
 - Implementación del servidor Express en `app.js`  
 - Prueba exitosa de la ruta principal (`GET /`) en entorno local  
 
-📌 Estado del Sprint 2  
-Sprint 2 completado (Backend) ✅  
-El entorno backend está listo para avanzar al diseño de base de datos en el próximo Sprint.
+📌 Estado de Configuración del entorno de desarrollo
+ Completado (Backend) ✅  
+El entorno backend está listo para avanzar al diseño de base de datos.
 
 ---
 
-🧾 Backend: Diseño del modelo de base de datos  
-Este documento resume las tareas realizadas durante el Sprint Backlog - Semana 2 - Tarea 3 del proyecto de sistema de pedidos para el buffet universitario, enfocadas en el diseño inicial de la base de datos.
+🧾 Diseño del modelo de base de datos  
 
-🎯 Objetivo del Sprint  
+🎯 Objetivo  
 - Diseñar modelo de base de datos inicial  
 - Crear las tablas necesarias para el sistema de pedidos  
 - Validar la conexión entre el backend y la base de datos
@@ -59,6 +59,6 @@ Este documento resume las tareas realizadas durante el Sprint Backlog - Semana 2
 - `.env.example` → Variables necesarias para conexión segura  
 - `.gitignore` → Exclusión del archivo `.env` real
 
-📌 Estado del Sprint 3  
-Sprint 3 completado (Backend) ✅  
-El backend está conectado correctamente a la base de datos y listo para avanzar con la lógica de autenticación y gestión de pedidos..
+📌 Estado Diseño del modelo de base de datos  
+Completado (Backend) ✅  
+El backend está conectado correctamente a la base de datos y listo para avanzar con la lógica de autenticación y gestión de pedidos.
