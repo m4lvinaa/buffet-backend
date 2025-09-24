@@ -54,8 +54,7 @@ Validación de respuesta en entorno local con datos reales
 
 app.js→ Conexión de rutas y configuración del servidor
 routes/test.js→ Definición de ruta de prueba
-.env.example→ Variables necesarias para conexión segura
-.gitignore→ Exclusión del archivo .envreal
+
 📌 Estado Diseño del modelo de base de datos
 Completado (Backend) ✅
 El backend está conectado correctamente a la base de datos y listo para avanzar con la lógica de autenticación y gestión de pedidos.
