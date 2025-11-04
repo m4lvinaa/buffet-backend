@@ -4,6 +4,7 @@ const {
   listarProductos,
   crearProducto,
   editarProducto,
+  listarProductoPorId, 
   eliminarProducto
 } = require('../controllers/productosController');
 const { verificarToken, verificarAdmin } = require('../middlewares/authMiddleware');
@@ -19,5 +20,7 @@ router.put('/:id', verificarToken, verificarAdmin, editarProducto);
 
 // Eliminar producto por ID (solo admin con token)
 router.delete('/:id', verificarToken, verificarAdmin, eliminarProducto);
+
+router.get('/:id', listarProductoPorId);
 
 module.exports = router;
