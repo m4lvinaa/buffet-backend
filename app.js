@@ -12,10 +12,16 @@ app.use(express.json());
 // Importar rutas
 const testRoutes = require('./routes/test');
 const usuariosRoutes = require('./routes/usuarios');
+const productosRoutes = require('./routes/productos');
+const carritoRoutes = require('./routes/carrito');
+const pedidoRoutes = require('./routes/pedido');
 
 // Usar rutas
-app.use('/', testRoutes); // Ruta de prueba
-app.use('/api/usuarios', usuariosRoutes); // Registro y login
+app.use('/', testRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/carrito', carritoRoutes);
+app.use('/api/pedido', pedidoRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {

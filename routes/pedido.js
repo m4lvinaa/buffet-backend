@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const {generarPedido} = require('../controllers/pedidoController');
-const verificarToken = require('../middlewares/verificarToken');
+const { generarPedido } = require('../controllers/pedidoController');
+const { verificarToken } = require('../middlewares/authMiddleware');
 
 router.post('/pedido', verificarToken, generarPedido);
 

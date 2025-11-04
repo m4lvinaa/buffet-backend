@@ -18,7 +18,7 @@ exports.registrarUsuario = async (req, res) => {
 
     // Insertar el nuevo usuario
     await pool.query(
-      'INSERT INTO usuarios (nombre, email, contraseña, rol) VALUES ($1, $2, $3, $4)',
+      'INSERT INTO usuarios (nombre, email, password, rol) VALUES ($1, $2, $3, $4)',
       [nombre, email, hash, rol || 'cliente']
     );
 
@@ -43,7 +43,7 @@ exports.loginUsuario = async (req, res) => {
     const usuario = resultado.rows[0];
 
     // Comparar la contraseña
-    const coincide = await bcrypt.compare(password, usuario.contraseña);
+    const coincide = await bcrypt.compare(password, usuario.password);
     if (!coincide) {
       return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
     }
