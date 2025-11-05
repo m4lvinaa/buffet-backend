@@ -1,11 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const { registrarUsuario, loginUsuario } = require('../controllers/usuariosController');
+const {
+  registrarUsuario,
+  loginUsuario,
+  listarUsuarios,
+  listarUsuarioPorId,
+  editarUsuario,
+  eliminarUsuario
+} = require('../controllers/usuariosController');
+const { verificarToken, verificarAdmin } = require('../middlewares/authMiddleware');
 
-// Ruta para registrar usuario
+// Registro y login (públicos)
 router.post('/registro', registrarUsuario);
-
-// Ruta para iniciar sesion
 router.post('/login', loginUsuario);
+
+// Admin: gestión de usuarios
+router.get('/', verificarToken, verificarAdmin, listarUsuarios);
+router.get('/:id', verificarToken, verificarAdmin, listarUsuarioPorId);
+router.post('/', verificarToken, verificarAdmin, registrarUsuario); 
+router.put('/:id', verificarToken, verificarAdmin, editarUsuario);
+router.delete('/:id', verificarToken, verificarAdmin, eliminarUsuario);
 
 module.exports = router;
