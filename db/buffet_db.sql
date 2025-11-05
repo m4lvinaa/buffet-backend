@@ -15,7 +15,8 @@ CREATE TABLE productos (
   nombre VARCHAR(100),
   descripcion TEXT,
   precio NUMERIC(10,2) NOT NULL,
-  stock INTEGER NOT NULL
+  stock INTEGER NOT NULL,
+  categoria VARCHAR(100)
 );
 
 -- Tabla de pedidos
