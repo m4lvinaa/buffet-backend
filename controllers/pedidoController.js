@@ -1,6 +1,7 @@
 const pool = require('../config/db');
+const QRCode = require('qrcode'); // Librería para generar QR
 
-// Generar pedido desde el carrito
+// Generar pedido desde el carrito con QR
 function generarPedido(req, res) {
     const id_usuario = req.usuario.id;
     const numero_pedido = 'PED-' + Date.now(); // Identificador único
@@ -28,9 +29,24 @@ function generarPedido(req, res) {
 
                 Promise.all(inserts)
                     .then(() => {
-                        // Vaciar carrito
-                        pool.query('DELETE FROM carrito WHERE id_usuario = $1', [id_usuario]);
-                        res.status(201).json({ mensaje: 'Pedido generado con éxito', numero_pedido });
+                        // Generar QR con contenido rastreable
+                        const qrContenido = `https://buffet.com/pedido/${numero_pedido}`;
+                        QRCode.toDataURL(qrContenido, (err, qrImagen) => {
+                            if (err) return res.status(500).json({ mensaje: 'Error al generar el código QR' });
+
+                            // Asociar QR al pedido
+                            pool.query('UPDATE pedidos SET qr = $1 WHERE id = $2', [qrImagen, id_pedido], (error) => {
+                                if (error) return res.status(500).json({ mensaje: 'Error al guardar el QR en el pedido' });
+
+                                // Vaciar carrito
+                                pool.query('DELETE FROM carrito WHERE id_usuario = $1', [id_usuario]);
+                                res.status(201).json({
+                                    mensaje: 'Pedido generado con QR',
+                                    numero_pedido,
+                                    qr: qrImagen
+                                });
+                            });
+                        });
                     })
                     .catch(() => res.status(500).json({ mensaje: 'Error al guardar el detalle del pedido' }));
             }
