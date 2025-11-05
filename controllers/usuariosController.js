@@ -34,7 +34,7 @@ exports.listarUsuarioPorId = async (req, res) => {
   }
 };
 
-// Crear usuario (registro público)
+// Crear usuario (registro público o admin)
 exports.registrarUsuario = async (req, res) => {
   const { nombre, email, password, rol } = req.body;
 
@@ -158,5 +158,62 @@ exports.loginUsuario = async (req, res) => {
   } catch (error) {
     console.error("Error en login:", error);
     res.status(500).json({ mensaje: "Error al iniciar sesión" });
+  }
+};
+
+// Ver perfil propio (usuario autenticado)
+exports.verMiPerfil = async (req, res) => {
+  const id = req.usuario.id;
+
+  try {
+    const resultado = await pool.query(
+      "SELECT id, nombre, email, rol FROM usuarios WHERE id = $1",
+      [id]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ mensaje: "Perfil no encontrado" });
+    }
+
+    res.json(resultado.rows[0]);
+  } catch (error) {
+    console.error("Error al obtener perfil:", error);
+    res.status(500).json({ mensaje: "Error al obtener perfil" });
+  }
+};
+
+// Editar perfil propio (usuario autenticado)
+exports.editarMiPerfil = async (req, res) => {
+  const id = req.usuario.id;
+  const { nombre, email, password } = req.body;
+
+  if (!nombre || !email) {
+    return res.status(400).json({ mensaje: "Faltan datos para editar" });
+  }
+
+  try {
+    let query, params;
+
+    if (password) {
+      const hash = await bcrypt.hash(password, 10);
+      query =
+        "UPDATE usuarios SET nombre = $1, email = $2, password = $3 WHERE id = $4 RETURNING id, nombre, email, rol";
+      params = [nombre, email, hash, id];
+    } else {
+      query =
+        "UPDATE usuarios SET nombre = $1, email = $2 WHERE id = $3 RETURNING id, nombre, email, rol";
+      params = [nombre, email, id];
+    }
+
+    const resultado = await pool.query(query, params);
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ mensaje: "Perfil no encontrado" });
+    }
+
+    res.json(resultado.rows[0]);
+  } catch (error) {
+    console.error("Error al editar perfil:", error);
+    res.status(500).json({ mensaje: "Error al editar perfil" });
   }
 };

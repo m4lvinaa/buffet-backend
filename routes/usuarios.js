@@ -6,13 +6,19 @@ const {
   listarUsuarios,
   listarUsuarioPorId,
   editarUsuario,
-  eliminarUsuario
+  eliminarUsuario,
+  verMiPerfil,
+  editarMiPerfil
 } = require('../controllers/usuariosController');
 const { verificarToken, verificarAdmin } = require('../middlewares/authMiddleware');
 
 // Registro y login (públicos)
 router.post('/registro', registrarUsuario);
 router.post('/login', loginUsuario);
+
+// Perfil propio (usuario autenticado)
+router.get('/perfil', verificarToken, verMiPerfil);
+router.put('/perfil', verificarToken, editarMiPerfil);
 
 // Admin: gestión de usuarios
 router.get('/', verificarToken, verificarAdmin, listarUsuarios);
