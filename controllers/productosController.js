@@ -29,15 +29,15 @@ function listarProductoPorId(req, res) {
 
 // Crear producto
 function crearProducto(req, res) {
-  const { nombre, descripcion, precio, stock, categoria } = req.body;
+  const { nombre, descripcion, precio, stock, categoria, activo, imagen_url } = req.body;
 
   if (!nombre || !precio || stock == null) {
     return res.status(400).json({ mensaje: "Faltan datos" });
   }
 
   pool.query(
-    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria, activo) VALUES ($1, $2, $3, $4, $5, true) RETURNING *",
-    [nombre, descripcion, precio, stock, categoria],
+    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria, activo, imagen_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+    [nombre, descripcion, precio, stock, categoria, activo ?? true, imagen_url],
     (error, resultado) => {
       if (error) {
         return res.status(500).json({ mensaje: "Error al crear producto" });
@@ -50,15 +50,15 @@ function crearProducto(req, res) {
 // Editar producto
 function editarProducto(req, res) {
   const id = req.params.id;
-  const { nombre, descripcion, precio, stock, categoria } = req.body;
+  const { nombre, descripcion, precio, stock, categoria, activo, imagen_url } = req.body;
 
   if (!nombre || !precio || stock == null) {
     return res.status(400).json({ mensaje: "Faltan datos para editar" });
   }
 
   pool.query(
-    "UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock = $4, categoria = $5 WHERE id = $6 RETURNING *",
-    [nombre, descripcion, precio, stock, categoria, id],
+    "UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock = $4, categoria = $5, activo = $6, imagen_url = $7 WHERE id = $8 RETURNING *",
+    [nombre, descripcion, precio, stock, categoria, activo, imagen_url, id],
     (error, resultado) => {
       if (error) {
         return res.status(500).json({ mensaje: "Error al editar producto" });

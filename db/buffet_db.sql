@@ -16,7 +16,9 @@ CREATE TABLE productos (
   descripcion TEXT,
   precio NUMERIC(10,2) NOT NULL,
   stock INTEGER NOT NULL,
-  categoria VARCHAR(100)
+  categoria VARCHAR(100),
+  activo BOOLEAN DEFAULT true, 
+  imagen_url TEXT  
 );
 
 -- Tabla de pedidos

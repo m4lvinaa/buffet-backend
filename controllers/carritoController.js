@@ -99,7 +99,7 @@ function verCarrito(req, res) {
     const id_usuario = req.usuario.id;
 
     pool.query(
-        `SELECT c.id_producto, p.nombre, c.cantidad, p.precio, c.subtotal
+        `SELECT c.id_producto, p.nombre, c.cantidad, p.precio, c.subtotal, p.imagen_url
          FROM carrito c
          JOIN productos p ON c.id_producto = p.id
          WHERE c.id_usuario = $1`,
@@ -113,6 +113,7 @@ function verCarrito(req, res) {
         }
     );
 }
+
 
 // Actualizar cantidad absoluta de un producto en el carrito
 function actualizarCantidad(req, res) {

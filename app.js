@@ -16,7 +16,7 @@ const productosRoutes = require('./routes/productos');
 const carritoRoutes = require('./routes/carrito');
 const pedidoRoutes = require('./routes/pedido');
 const dashboardRoutes = require('./routes/dashboard');
-
+const uploadRoutes = require('./routes/upload'); 
 
 // Usar rutas
 app.use('/', testRoutes);
@@ -25,7 +25,7 @@ app.use('/api/productos', productosRoutes);
 app.use('/api/carrito', carritoRoutes);
 app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-
+app.use('/api', uploadRoutes); 
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -36,5 +36,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
-

@@ -47,11 +47,9 @@ function generarPedido(req, res) {
                   [qrImagen, id_pedido],
                   (error) => {
                     if (error)
-                      return res
-                        .status(500)
-                        .json({
-                          mensaje: "Error al guardar el QR en el pedido",
-                        });
+                      return res.status(500).json({
+                        mensaje: "Error al guardar el QR en el pedido",
+                      });
 
                     pool.query("DELETE FROM carrito WHERE id_usuario = $1", [
                       id_usuario,
@@ -219,14 +217,13 @@ function eliminarPedido(req, res) {
     res.status(200).json({ mensaje: "Pedido eliminado correctamente" });
   });
 }
-
 function obtenerProductosDelPedido(req, res) {
   const id_usuario = req.usuario.id;
   const id_pedido = req.params.id;
 
   pool.query(
     `SELECT dp.id, dp.cantidad, dp.subtotal,
-            p.nombre, p.precio
+            p.nombre, p.precio, p.imagen_url
      FROM detalle_pedido dp
      JOIN productos p ON p.id = dp.producto_id
      JOIN pedidos ped ON ped.id = dp.pedido_id
@@ -234,8 +231,10 @@ function obtenerProductosDelPedido(req, res) {
     [id_pedido, id_usuario],
     (error, resultado) => {
       if (error) {
-        console.error('Error en obtenerProductosDelPedido:', error);
-        return res.status(500).json({ mensaje: 'Error al obtener productos del pedido' });
+        console.error("Error en obtenerProductosDelPedido:", error);
+        return res
+          .status(500)
+          .json({ mensaje: "Error al obtener productos del pedido" });
       }
       res.status(200).json(resultado.rows);
     }
@@ -247,15 +246,17 @@ function obtenerQRDelPedido(req, res) {
   const id_pedido = req.params.id;
 
   pool.query(
-    'SELECT qr, numero_pedido FROM pedidos WHERE id = $1 AND usuario_id = $2',
+    "SELECT qr, numero_pedido FROM pedidos WHERE id = $1 AND usuario_id = $2",
     [id_pedido, id_usuario],
     (error, resultado) => {
       if (error) {
-        console.error('Error al obtener QR:', error);
-        return res.status(500).json({ mensaje: 'Error al obtener el QR del pedido' });
+        console.error("Error al obtener QR:", error);
+        return res
+          .status(500)
+          .json({ mensaje: "Error al obtener el QR del pedido" });
       }
       if (resultado.rows.length === 0) {
-        return res.status(404).json({ mensaje: 'QR no encontrado' });
+        return res.status(404).json({ mensaje: "QR no encontrado" });
       }
 
       const { qr, numero_pedido } = resultado.rows[0];
@@ -272,7 +273,9 @@ function verificarEntregaPorQR(req, res) {
     (error, resultado) => {
       if (error) {
         console.error("Error al buscar pedidos:", error);
-        return res.status(500).json({ mensaje: "Error al verificar el código" });
+        return res
+          .status(500)
+          .json({ mensaje: "Error al verificar el código" });
       }
 
       const pedidos = resultado.rows;
@@ -281,7 +284,9 @@ function verificarEntregaPorQR(req, res) {
       );
 
       if (!pedidoCoincidente) {
-        return res.status(404).json({ mensaje: "Código no válido o ya entregado" });
+        return res
+          .status(404)
+          .json({ mensaje: "Código no válido o ya entregado" });
       }
 
       pool.query(
@@ -290,7 +295,9 @@ function verificarEntregaPorQR(req, res) {
         (error) => {
           if (error) {
             console.error("Error al actualizar estado:", error);
-            return res.status(500).json({ mensaje: "Error al marcar como entregado" });
+            return res
+              .status(500)
+              .json({ mensaje: "Error al marcar como entregado" });
           }
 
           res.status(200).json({
@@ -301,8 +308,6 @@ function verificarEntregaPorQR(req, res) {
     }
   );
 }
-
-
 
 module.exports = {
   generarPedido,
@@ -315,5 +320,5 @@ module.exports = {
   eliminarPedido,
   obtenerProductosDelPedido,
   obtenerQRDelPedido,
-  verificarEntregaPorQR
+  verificarEntregaPorQR,
 };
