@@ -1,17 +1,33 @@
 const pool = require("../config/db");
 
-// Mostrar todos los productos
+// Mostrar todos los productos activos
 function listarProductos(req, res) {
-  pool.query("SELECT * FROM productos", (error, resultado) => {
+  pool.query("SELECT * FROM productos WHERE activo = true", (error, resultado) => {
     if (error) {
       return res.status(500).json({ mensaje: "Error al buscar productos" });
     }
-
     res.json(resultado.rows);
   });
 }
 
-// Crear un nuevo producto (solo admin)
+// Mostrar producto por ID (incluye inactivos para historial)
+function listarProductoPorId(req, res) {
+  const id = req.params.id;
+
+  pool.query("SELECT * FROM productos WHERE id = $1", [id], (error, resultado) => {
+    if (error) {
+      return res.status(500).json({ mensaje: "Error al obtener el producto" });
+    }
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ mensaje: "Producto no encontrado" });
+    }
+
+    res.json(resultado.rows[0]);
+  });
+}
+
+// Crear producto
 function crearProducto(req, res) {
   const { nombre, descripcion, precio, stock, categoria } = req.body;
 
@@ -20,20 +36,18 @@ function crearProducto(req, res) {
   }
 
   pool.query(
-    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria, activo) VALUES ($1, $2, $3, $4, $5, true) RETURNING *",
     [nombre, descripcion, precio, stock, categoria],
     (error, resultado) => {
       if (error) {
         return res.status(500).json({ mensaje: "Error al crear producto" });
       }
-
       res.status(201).json(resultado.rows[0]);
     }
   );
 }
 
-
-// Editar producto por ID (solo admin)
+// Editar producto
 function editarProducto(req, res) {
   const id = req.params.id;
   const { nombre, descripcion, precio, stock, categoria } = req.body;
@@ -59,56 +73,28 @@ function editarProducto(req, res) {
   );
 }
 
-
-// Eliminar producto por ID (solo admin)
+// Marcar producto como inactivo (eliminar lógico)
 function eliminarProducto(req, res) {
   const id = req.params.id;
 
   if (!id || isNaN(id)) {
-    console.warn("ID inválido recibido:", id);
     return res.status(400).json({ mensaje: "ID inválido" });
   }
 
   pool.query(
-    "DELETE FROM productos WHERE id = $1 RETURNING *",
+    "UPDATE productos SET activo = false WHERE id = $1 RETURNING *",
     [id],
     (error, resultado) => {
       if (error) {
-        console.error("Error al ejecutar DELETE en productos:", error);
-        return res
-          .status(500)
-          .json({ mensaje: "Error interno al eliminar producto" });
-      }
-
-      if (resultado.rows.length === 0) {
-        console.warn("Producto no encontrado para eliminar. ID:", id);
-        return res.status(404).json({ mensaje: "Producto no encontrado" });
-      }
-
-      console.log("Producto eliminado correctamente:", resultado.rows[0]);
-      res.json({ mensaje: "Producto eliminado", producto: resultado.rows[0] });
-    }
-  );
-}
-
-function listarProductoPorId(req, res) {
-  const id = req.params.id;
-
-  pool.query(
-    "SELECT * FROM productos WHERE id = $1",
-    [id],
-    (error, resultado) => {
-      if (error) {
-        return res
-          .status(500)
-          .json({ mensaje: "Error al obtener el producto" });
+        console.error("Error al marcar producto como inactivo:", error);
+        return res.status(500).json({ mensaje: "Error interno al eliminar producto" });
       }
 
       if (resultado.rows.length === 0) {
         return res.status(404).json({ mensaje: "Producto no encontrado" });
       }
 
-      res.json(resultado.rows[0]);
+      res.json({ mensaje: "Producto marcado como inactivo", producto: resultado.rows[0] });
     }
   );
 }
