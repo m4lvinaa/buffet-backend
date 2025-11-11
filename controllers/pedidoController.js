@@ -27,10 +27,16 @@ function generarPedido(req, res) {
           const id_pedido = pedido.rows[0].id;
 
           const inserts = carrito.rows.map((item) =>
-            pool.query(
-              "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
-              [id_pedido, item.id_producto, item.cantidad, item.subtotal]
-            )
+            Promise.all([
+              pool.query(
+                "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
+                [id_pedido, item.id_producto, item.cantidad, item.subtotal]
+              ),
+              pool.query(
+                "UPDATE productos SET stock = stock - $1 WHERE id = $2",
+                [item.cantidad, item.id_producto]
+              )
+            ])
           );
 
           Promise.all(inserts)
