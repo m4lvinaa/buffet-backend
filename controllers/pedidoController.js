@@ -274,6 +274,8 @@ function obtenerQRDelPedido(req, res) {
 function verificarEntregaPorQR(req, res) {
   const { codigo } = req.body;
 
+  console.log("Código recibido:", codigo);
+
   pool.query(
     `SELECT id, numero_pedido, qr, estado FROM pedidos WHERE estado != 'Entregado'`,
     (error, resultado) => {
@@ -285,9 +287,22 @@ function verificarEntregaPorQR(req, res) {
       }
 
       const pedidos = resultado.rows;
+      console.log("Pedidos en BD:", pedidos.map(p => ({ id: p.id, numero_pedido: p.numero_pedido })));
+      
+      // Extraer numero_pedido del código si es una URL
+      let codigoLimpio = codigo.trim();
+      if (codigoLimpio.includes('/pedido/')) {
+        const parts = codigoLimpio.split('/pedido/');
+        codigoLimpio = parts[1];
+      }
+      
+      console.log("Código limpio:", codigoLimpio);
+
       const pedidoCoincidente = pedidos.find(
-        (p) => p.numero_pedido === codigo || p.qr?.includes(codigo)
+        (p) => p.numero_pedido === codigoLimpio || p.numero_pedido === codigo || p.qr?.includes(codigoLimpio)
       );
+
+      console.log("Pedido coincidente:", pedidoCoincidente);
 
       if (!pedidoCoincidente) {
         return res
