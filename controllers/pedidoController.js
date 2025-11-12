@@ -35,7 +35,7 @@ function generarPedido(req, res) {
               pool.query(
                 "UPDATE productos SET stock = stock - $1 WHERE id = $2",
                 [item.cantidad, item.id_producto]
-              )
+              ),
             ])
           );
 
@@ -185,24 +185,43 @@ function verTodosLosPedidos(req, res) {
 function verDetallePedidoAdmin(req, res) {
   const id = req.params.id;
 
-  pool.query(
-    `SELECT id, numero_pedido, estado, fecha,
-            (SELECT SUM(subtotal) FROM detalle_pedido WHERE pedido_id = pedidos.id) AS total,
-            usuario_id, qr
-     FROM pedidos
-     WHERE id = $1`,
-    [id],
-    (error, resultado) => {
-      if (error) {
-        console.error("Error en verDetallePedidoAdmin:", error);
-        return res.status(500).json({ mensaje: "Error al obtener el pedido" });
-      }
-      if (resultado.rows.length === 0) {
+  pool.connect().then(async (client) => {
+    try {
+      // Traer el pedido
+      const pedidoRes = await client.query(
+        `SELECT id, numero_pedido, estado, fecha,
+                (SELECT SUM(subtotal) FROM detalle_pedido WHERE pedido_id = pedidos.id) AS total,
+                usuario_id, qr
+         FROM pedidos
+         WHERE id = $1`,
+        [id]
+      );
+
+      if (pedidoRes.rowCount === 0) {
         return res.status(404).json({ mensaje: "Pedido no encontrado" });
       }
-      res.status(200).json(resultado.rows[0]);
+
+      const pedido = pedidoRes.rows[0];
+
+      // Traer productos asociados
+      const productosRes = await client.query(
+        `SELECT dp.producto_id, dp.cantidad, dp.subtotal, p.nombre, p.precio
+         FROM detalle_pedido dp
+         JOIN productos p ON dp.producto_id = p.id
+         WHERE dp.pedido_id = $1`,
+        [id]
+      );
+
+      pedido.productos = productosRes.rows; // 👈 ahora sí tiene productos
+
+      res.status(200).json(pedido);
+    } catch (error) {
+      console.error("Error en verDetallePedidoAdmin:", error);
+      res.status(500).json({ mensaje: "Error al obtener el pedido" });
+    } finally {
+      client.release();
     }
-  );
+  });
 }
 
 function eliminarPedido(req, res) {
@@ -287,19 +306,25 @@ function verificarEntregaPorQR(req, res) {
       }
 
       const pedidos = resultado.rows;
-      console.log("Pedidos en BD:", pedidos.map(p => ({ id: p.id, numero_pedido: p.numero_pedido })));
-      
+      console.log(
+        "Pedidos en BD:",
+        pedidos.map((p) => ({ id: p.id, numero_pedido: p.numero_pedido }))
+      );
+
       // Extraer numero_pedido del código si es una URL
       let codigoLimpio = codigo.trim();
-      if (codigoLimpio.includes('/pedido/')) {
-        const parts = codigoLimpio.split('/pedido/');
+      if (codigoLimpio.includes("/pedido/")) {
+        const parts = codigoLimpio.split("/pedido/");
         codigoLimpio = parts[1];
       }
-      
+
       console.log("Código limpio:", codigoLimpio);
 
       const pedidoCoincidente = pedidos.find(
-        (p) => p.numero_pedido === codigoLimpio || p.numero_pedido === codigo || p.qr?.includes(codigoLimpio)
+        (p) =>
+          p.numero_pedido === codigoLimpio ||
+          p.numero_pedido === codigo ||
+          p.qr?.includes(codigoLimpio)
       );
 
       console.log("Pedido coincidente:", pedidoCoincidente);
@@ -329,77 +354,139 @@ function verificarEntregaPorQR(req, res) {
     }
   );
 }
- 
-function crearPedidoAdmin(req, res) {
-    const { usuario_id, productos, estado } = req.body;
-  
-    const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ mensaje: "Estado inválido" });
-    }
-  
-    if (!Array.isArray(productos) || productos.length === 0) {
-      return res.status(400).json({ mensaje: "Productos inválidos" });
-    }
-  
-    const numero_pedido = "PED-" + Date.now();
-  
-    pool.connect().then(async (client) => {
-      try {
-        await client.query("BEGIN");
-  
-        const pedidoRes = await client.query(
-          "INSERT INTO pedidos (usuario_id, estado, numero_pedido) VALUES ($1, $2, $3) RETURNING id",
-          [usuario_id, estado, numero_pedido]
-        );
-        const id_pedido = pedidoRes.rows[0].id;
-  
-        for (const item of productos) {
-          await client.query(
-            "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
-            [id_pedido, item.id_producto, item.cantidad, item.subtotal]
-          );
-        }
-  
-        await client.query("COMMIT");
-        res.status(201).json({ mensaje: "Pedido creado correctamente", id_pedido });
-      } catch (error) {
-        await client.query("ROLLBACK");
-        console.error("Error en crearPedidoAdmin:", error);
-        res.status(500).json({ mensaje: "Error al crear el pedido" });
-      } finally {
-        client.release();
-      }
-    });
+
+async function crearPedidoAdmin(req, res) {
+  const { usuario_id, productos, estado } = req.body;
+
+  const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+  if (!estadosValidos.includes(estado)) {
+    return res.status(400).json({ mensaje: "Estado inválido" });
   }
-  
-  function editarPedidoAdmin(req, res) {
-    const id_pedido = req.params.id;
-    const { estado } = req.body;
-  
-    const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ mensaje: "Estado inválido" });
-    }
-  
-    pool.query(
-      "UPDATE pedidos SET estado = $1 WHERE id = $2",
-      [estado, id_pedido],
-      (error, resultado) => {
-        if (error) {
-          console.error("Error en editarPedidoAdmin:", error);
-          return res.status(500).json({ mensaje: "Error al editar el pedido" });
-        }
-  
-        if (resultado.rowCount === 0) {
-          return res.status(404).json({ mensaje: "Pedido no encontrado" });
-        }
-  
-        res.status(200).json({ mensaje: "Pedido actualizado correctamente" });
-      }
+
+  if (!Array.isArray(productos) || productos.length === 0) {
+    return res.status(400).json({ mensaje: "Productos inválidos" });
+  }
+
+  const numero_pedido = "PED-" + Date.now();
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const pedidoRes = await client.query(
+      "INSERT INTO pedidos (usuario_id, estado, numero_pedido) VALUES ($1, $2, $3) RETURNING id",
+      [usuario_id, estado, numero_pedido]
     );
+    const id_pedido = pedidoRes.rows[0].id;
+
+    for (const item of productos) {
+      await client.query(
+        "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
+        [id_pedido, item.id_producto, item.cantidad, item.subtotal]
+      );
+    }
+
+    // 👇 Generar QR también para pedidos creados por admin
+    const qrContenido = `https://buffet.com/pedido/${numero_pedido}`;
+    const qrImagen = await QRCode.toDataURL(qrContenido);
+    await client.query("UPDATE pedidos SET qr = $1 WHERE id = $2", [
+      qrImagen,
+      id_pedido,
+    ]);
+
+    await client.query("COMMIT");
+    res.status(201).json({
+      mensaje: "Pedido creado correctamente con QR",
+      id_pedido,
+      numero_pedido,
+      qr: qrImagen,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error en crearPedidoAdmin:", error);
+    res.status(500).json({ mensaje: "Error al crear el pedido" });
+  } finally {
+    client.release();
   }
-  
+}
+
+
+async function editarPedidoAdmin(req, res) {
+  const id_pedido = req.params.id;
+  const { estado, productos } = req.body;
+
+  const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+  if (!estadosValidos.includes(estado)) {
+    return res.status(400).json({ mensaje: "Estado inválido" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Actualizar estado
+    await client.query("UPDATE pedidos SET estado = $1 WHERE id = $2", [
+      estado,
+      id_pedido,
+    ]);
+
+    // Borrar productos anteriores
+    await client.query("DELETE FROM detalle_pedido WHERE pedido_id = $1", [
+      id_pedido,
+    ]);
+
+    // Insertar productos nuevos
+    for (const prod of productos) {
+      await client.query(
+        "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
+        [id_pedido, prod.id_producto, prod.cantidad, prod.subtotal]
+      );
+    }
+
+    // Calcular total desde detalle_pedido
+    const totalRes = await client.query(
+      "SELECT SUM(subtotal) AS total FROM detalle_pedido WHERE pedido_id = $1",
+      [id_pedido]
+    );
+    const total = totalRes.rows[0].total || 0;
+
+    await client.query("COMMIT");
+
+    res.status(200).json({
+      mensaje: "Pedido actualizado correctamente",
+      total,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error en editarPedidoAdmin:", error);
+    res.status(500).json({ mensaje: "Error al editar el pedido" });
+  } finally {
+    client.release();
+  }
+}
+
+function cancelarPedidoAdmin(req, res) {
+  const id_pedido = req.params.id;
+
+  pool.query(
+    "UPDATE pedidos SET estado = $1 WHERE id = $2",
+    ["Cancelado", id_pedido],
+    (error, resultado) => {
+      if (error) {
+        console.error("Error en cancelarPedidoAdmin:", error);
+        return res.status(500).json({ mensaje: "Error al cancelar el pedido" });
+      }
+
+      if (resultado.rowCount === 0) {
+        return res.status(404).json({ mensaje: "Pedido no encontrado" });
+      }
+
+      res.status(200).json({ mensaje: "Pedido cancelado correctamente" });
+    }
+  );
+}
+
+
 module.exports = {
   generarPedido,
   actualizarEstadoPedido,
@@ -413,5 +500,6 @@ module.exports = {
   obtenerQRDelPedido,
   verificarEntregaPorQR,
   crearPedidoAdmin,
-  editarPedidoAdmin
+  editarPedidoAdmin,
+  cancelarPedidoAdmin
 };

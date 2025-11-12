@@ -13,7 +13,8 @@ const {
   obtenerQRDelPedido,
   verificarEntregaPorQR,
   crearPedidoAdmin,
-  editarPedidoAdmin
+  editarPedidoAdmin,
+  cancelarPedidoAdmin
 } = require('../controllers/pedidoController');
 const { verificarToken, verificarAdmin } = require('../middlewares/authMiddleware');
 
@@ -38,5 +39,6 @@ router.get('/:id/qr', verificarToken, obtenerQRDelPedido);
 router.get('/', verificarToken, verificarAdmin, verTodosLosPedidos); // GET /api/pedidos
 router.get('/:id', verificarToken, verificarAdmin, verDetallePedidoAdmin); // GET /api/pedidos/:id
 router.delete('/:id', verificarToken, verificarAdmin, eliminarPedido); // DELETE /api/pedidos/:id
+router.put("/:id/cancelar", verificarToken, verificarAdmin, cancelarPedidoAdmin);
 
 module.exports = router;

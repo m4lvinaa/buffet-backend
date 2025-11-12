@@ -22,7 +22,7 @@ function verificarToken(req, res, next) {
 // Verifica si el usuario tiene rol "admin"
 function verificarAdmin(req, res, next) {
     if (req.usuario.rol !== 'admin') {
-        return res.status(403).json({ mensaje: 'Solo los administradores piden hacer esto' });
+        return res.status(403).json({ mensaje: 'Solo los administradores pueden hacer esto' });
     }
     next();
 }
