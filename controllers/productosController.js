@@ -29,15 +29,15 @@ function listarProductoPorId(req, res) {
 
 // Crear producto
 function crearProducto(req, res) {
-  const { nombre, descripcion, precio, stock, categoria, activo, promocion, imagen_url } = req.body;
+  const { nombre, descripcion, precio, stock, categoria_id, activo, promocion, imagen_url } = req.body;
 
   if (!nombre || !precio || stock == null) {
     return res.status(400).json({ mensaje: "Faltan datos" });
   }
 
   pool.query(
-    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria, activo, promocion, imagen_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-    [nombre, descripcion, precio, stock, categoria, activo ?? true, promocion ?? false, imagen_url],
+    "INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id, activo, promocion, imagen_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+    [nombre, descripcion, precio, stock, categoria_id, activo ?? true, promocion ?? false, imagen_url],
     (error, resultado) => {
       if (error) {
         console.error('Error en crearProducto:', error);
@@ -51,15 +51,15 @@ function crearProducto(req, res) {
 // Editar producto
 function editarProducto(req, res) {
   const id = req.params.id;
-  const { nombre, descripcion, precio, stock, categoria, activo, promocion, imagen_url } = req.body;
+  const { nombre, descripcion, precio, stock, categoria_id, activo, promocion, imagen_url } = req.body;
 
   if (!nombre || !precio || stock == null) {
     return res.status(400).json({ mensaje: "Faltan datos para editar" });
   }
 
   pool.query(
-    "UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock = $4, categoria = $5, activo = $6, promocion = $7, imagen_url = $8 WHERE id = $9 RETURNING *",
-    [nombre, descripcion, precio, stock, categoria, activo, promocion ?? false, imagen_url, id],
+    "UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock = $4, categoria_id = $5, activo = $6, promocion = $7, imagen_url = $8 WHERE id = $9 RETURNING *",
+    [nombre, descripcion, precio, stock, categoria_id, activo, promocion ?? false, imagen_url, id],
     (error, resultado) => {
       if (error) {
         console.error('Error en editarProducto:', error);

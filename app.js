@@ -10,21 +10,21 @@ app.use(cors());
 app.use(express.json());
 
 // Importar rutas
-const testRoutes = require('./routes/test');
 const usuariosRoutes = require('./routes/usuarios');
 const productosRoutes = require('./routes/productos');
 const carritoRoutes = require('./routes/carrito');
 const pedidoRoutes = require('./routes/pedido');
 const dashboardRoutes = require('./routes/dashboard');
-const uploadRoutes = require('./routes/upload'); 
+const uploadRoutes = require('./routes/upload');
+const categoriasRoutes = require('./routes/categorias');
 
 // Usar rutas
-app.use('/', testRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/carrito', carritoRoutes);
 app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/categorias', categoriasRoutes);
 app.use('/api', uploadRoutes); 
 
 // Ruta raíz
