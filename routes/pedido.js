@@ -11,7 +11,9 @@ const {
   eliminarPedido,
   obtenerProductosDelPedido,
   obtenerQRDelPedido,
-  verificarEntregaPorQR
+  verificarEntregaPorQR,
+  crearPedidoAdmin,
+  editarPedidoAdmin
 } = require('../controllers/pedidoController');
 const { verificarToken, verificarAdmin } = require('../middlewares/authMiddleware');
 
@@ -26,12 +28,15 @@ router.get('/pedido/estado', verificarToken, obtenerEstadoPedido); // GET /api/p
 router.put('/pedido/:id_pedido/estado', verificarToken, verificarAdmin, actualizarEstadoPedido); // PUT /api/pedidos/pedido/:id_pedido/estado
 router.put('/verificar-entrega', verificarToken, verificarAdmin, verificarEntregaPorQR); // PUT /api/pedidos/verificar-entrega
 
+// NUEVAS rutas para CRUD admin
+router.post('/admin', verificarToken, verificarAdmin, crearPedidoAdmin); // POST /api/pedidos/admin
+router.put('/admin/:id', verificarToken, verificarAdmin, editarPedidoAdmin); // PUT /api/pedidos/admin/:id
+
 // Rutas dinámicas (deben venir después de rutas específicas)
 router.get('/:id/productos', verificarToken, obtenerProductosDelPedido);
 router.get('/:id/qr', verificarToken, obtenerQRDelPedido);
 router.get('/', verificarToken, verificarAdmin, verTodosLosPedidos); // GET /api/pedidos
 router.get('/:id', verificarToken, verificarAdmin, verDetallePedidoAdmin); // GET /api/pedidos/:id
 router.delete('/:id', verificarToken, verificarAdmin, eliminarPedido); // DELETE /api/pedidos/:id
-
 
 module.exports = router;

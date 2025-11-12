@@ -329,7 +329,77 @@ function verificarEntregaPorQR(req, res) {
     }
   );
 }
-
+ 
+function crearPedidoAdmin(req, res) {
+    const { usuario_id, productos, estado } = req.body;
+  
+    const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ mensaje: "Estado inválido" });
+    }
+  
+    if (!Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({ mensaje: "Productos inválidos" });
+    }
+  
+    const numero_pedido = "PED-" + Date.now();
+  
+    pool.connect().then(async (client) => {
+      try {
+        await client.query("BEGIN");
+  
+        const pedidoRes = await client.query(
+          "INSERT INTO pedidos (usuario_id, estado, numero_pedido) VALUES ($1, $2, $3) RETURNING id",
+          [usuario_id, estado, numero_pedido]
+        );
+        const id_pedido = pedidoRes.rows[0].id;
+  
+        for (const item of productos) {
+          await client.query(
+            "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
+            [id_pedido, item.id_producto, item.cantidad, item.subtotal]
+          );
+        }
+  
+        await client.query("COMMIT");
+        res.status(201).json({ mensaje: "Pedido creado correctamente", id_pedido });
+      } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Error en crearPedidoAdmin:", error);
+        res.status(500).json({ mensaje: "Error al crear el pedido" });
+      } finally {
+        client.release();
+      }
+    });
+  }
+  
+  function editarPedidoAdmin(req, res) {
+    const id_pedido = req.params.id;
+    const { estado } = req.body;
+  
+    const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ mensaje: "Estado inválido" });
+    }
+  
+    pool.query(
+      "UPDATE pedidos SET estado = $1 WHERE id = $2",
+      [estado, id_pedido],
+      (error, resultado) => {
+        if (error) {
+          console.error("Error en editarPedidoAdmin:", error);
+          return res.status(500).json({ mensaje: "Error al editar el pedido" });
+        }
+  
+        if (resultado.rowCount === 0) {
+          return res.status(404).json({ mensaje: "Pedido no encontrado" });
+        }
+  
+        res.status(200).json({ mensaje: "Pedido actualizado correctamente" });
+      }
+    );
+  }
+  
 module.exports = {
   generarPedido,
   actualizarEstadoPedido,
@@ -342,4 +412,6 @@ module.exports = {
   obtenerProductosDelPedido,
   obtenerQRDelPedido,
   verificarEntregaPorQR,
+  crearPedidoAdmin,
+  editarPedidoAdmin
 };
