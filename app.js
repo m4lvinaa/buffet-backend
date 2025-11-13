@@ -5,36 +5,32 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de CORS
-const corsOptions = {
-  origin: [
-    "https://buffet-ecommerce-2t4sk4d1pj-brisa-valerio5s-projects.vercel.app",
-    "https://buffet-ecommerce-two.vercel.app",
-    "http://localhost:5173",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
+// Lista de orígenes permitidos (frontend y local)
+const allowedOrigins = [
+  "https://buffet-ecommerce-two.vercel.app",
+  "https://buffet-ecommerce-2t4sk4d1pj-brisa-valerio5s-projects.vercel.app",
+  "http://localhost:5173",
+];
 
-// Middleware CORS
-app.use(cors(corsOptions));
-
-// Responder preflight (para Railway)
-app.options(/.*/, cors(corsOptions));
-
-// Refuerzo manual de encabezados CORS
+// Middleware CORS (manual, confiable para Railway)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (corsOptions.origin.includes(origin)) {
+  if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
   }
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
+
+  // Responder correctamente preflight requests
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
   next();
 });
 
+// Middleware JSON
 app.use(express.json());
 
 // Rutas del backend
