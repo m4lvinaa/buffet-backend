@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
   origin: [
     'https://buffet-ecommerce-2t4sk4d1pj-brisa-valerio5s-projects.vercel.app', // producción
+    'https://buffet-ecommerce-qer1l7tgd-julietas-projects-bb92a50b.vercel.app', // producción
     'http://localhost:5173' // desarrollo local
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
