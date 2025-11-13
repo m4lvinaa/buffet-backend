@@ -21,7 +21,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Responder preflight (para Railway)
-app.options("*", cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // Refuerzo manual de encabezados CORS
 app.use((req, res, next) => {
