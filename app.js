@@ -18,8 +18,8 @@ const corsOptions = {
 // Middleware CORS
 app.use(cors(corsOptions));
 
-// Responder preflight
-app.options('/api/*', cors(corsOptions), (req, res) => {
+// Opcional: responder explícitamente a preflight con regex
+app.options(/^\/api\/.*$/, cors(corsOptions), (req, res) => {
   res.sendStatus(204);
 });
 
