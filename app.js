@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -5,11 +6,11 @@ require("dotenv").config();
 const corsOptions = require("./config/cors");
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
-// Middleware CORS
+// Middleware CORS (antes de las rutas)
 app.use(cors(corsOptions));
-
+app.options("*", cors(corsOptions)); 
 
 // Middleware JSON
 app.use(express.json());
