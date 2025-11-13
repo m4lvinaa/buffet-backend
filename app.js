@@ -18,6 +18,11 @@ const corsOptions = {
 // Middleware CORS
 app.use(cors(corsOptions));
 
+// Responder preflight
+app.options('/api/*', cors(corsOptions), (req, res) => {
+  res.sendStatus(204);
+});
+
 app.use(express.json());
 
 // Rutas...
@@ -37,3 +42,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
