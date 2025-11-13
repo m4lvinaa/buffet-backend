@@ -1,5 +1,6 @@
 const allowedOrigins = [
   "http://localhost:5173", // frontend local
+  "http://localhost:4173/", // frontend local
 ];
 
 const corsOptions = {
