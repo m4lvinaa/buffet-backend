@@ -1,6 +1,7 @@
 const allowedOrigins = [
   "http://localhost:5173", // frontend local
   "http://localhost:4173", // frontend local
+  "https://buffet-ecommerce-two.vercel.app", // frontend en producción
 ];
 
 const corsOptions = {
