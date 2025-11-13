@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -17,6 +18,7 @@ const pedidoRoutes = require('./routes/pedido');
 const dashboardRoutes = require('./routes/dashboard');
 const uploadRoutes = require('./routes/upload');
 const categoriasRoutes = require('./routes/categorias');
+const notificacionesRoutes = require("./routes/notificaciones");
 
 // Usar rutas
 app.use('/api/usuarios', usuariosRoutes);
@@ -26,6 +28,7 @@ app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api', uploadRoutes); 
+app.use("/api/notificaciones", notificacionesRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {

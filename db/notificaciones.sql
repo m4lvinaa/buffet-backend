@@ -1,0 +1,7 @@
+CREATE TABLE notificaciones (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id),
+  mensaje TEXT NOT NULL,
+  leida BOOLEAN DEFAULT FALSE,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

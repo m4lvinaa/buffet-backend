@@ -100,7 +100,7 @@ function actualizarEstadoPedido(req, res) {
   const { id_pedido } = req.params;
   const { nuevo_estado } = req.body;
 
-  const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+  const estadosValidos = ["Pendiente", "Entregado", "Cancelado", "Listo"];
   if (!estadosValidos.includes(nuevo_estado)) {
     return res.status(400).json({ mensaje: "Estado inválido" });
   }
@@ -296,7 +296,9 @@ function verificarEntregaPorQR(req, res) {
   console.log("Código recibido:", codigo);
 
   pool.query(
-    `SELECT id, numero_pedido, qr, estado FROM pedidos WHERE estado != 'Entregado'`,
+    `SELECT id, numero_pedido, qr, estado, usuario_id 
+     FROM pedidos 
+     WHERE estado != 'Entregado'`,
     (error, resultado) => {
       if (error) {
         console.error("Error al buscar pedidos:", error);
@@ -311,7 +313,6 @@ function verificarEntregaPorQR(req, res) {
         pedidos.map((p) => ({ id: p.id, numero_pedido: p.numero_pedido }))
       );
 
-      // Extraer numero_pedido del código si es una URL
       let codigoLimpio = codigo.trim();
       if (codigoLimpio.includes("/pedido/")) {
         const parts = codigoLimpio.split("/pedido/");
@@ -346,6 +347,23 @@ function verificarEntregaPorQR(req, res) {
               .json({ mensaje: "Error al marcar como entregado" });
           }
 
+          const mensaje = `Tu pedido ${pedidoCoincidente.numero_pedido} fue marcado como entregado.`;
+
+          pool.query(
+            `INSERT INTO notificaciones (usuario_id, mensaje)
+             SELECT $1, $2
+             WHERE NOT EXISTS (
+               SELECT 1 FROM notificaciones
+               WHERE usuario_id = $1 AND mensaje = $2 AND leida = FALSE
+             )`,
+            [pedidoCoincidente.usuario_id, mensaje],
+            (error) => {
+              if (error) {
+                console.error("Error al insertar notificación:", error);
+              }
+            }
+          );
+
           res.status(200).json({
             mensaje: `Pedido ${pedidoCoincidente.numero_pedido} marcado como entregado`,
           });
@@ -358,7 +376,7 @@ function verificarEntregaPorQR(req, res) {
 async function crearPedidoAdmin(req, res) {
   const { usuario_id, productos, estado } = req.body;
 
-  const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+  const estadosValidos = ["Pendiente", "Entregado", "Cancelado", "Listo"];
   if (!estadosValidos.includes(estado)) {
     return res.status(400).json({ mensaje: "Estado inválido" });
   }
@@ -410,12 +428,13 @@ async function crearPedidoAdmin(req, res) {
   }
 }
 
+const { enviarMailPedido } = require("../helpers/mailer");
 
 async function editarPedidoAdmin(req, res) {
   const id_pedido = req.params.id;
   const { estado, productos } = req.body;
 
-  const estadosValidos = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+  const estadosValidos = ["Pendiente", "Cancelado", "Entregado", "Listo"];
   if (!estadosValidos.includes(estado)) {
     return res.status(400).json({ mensaje: "Estado inválido" });
   }
@@ -424,18 +443,15 @@ async function editarPedidoAdmin(req, res) {
   try {
     await client.query("BEGIN");
 
-    // Actualizar estado
     await client.query("UPDATE pedidos SET estado = $1 WHERE id = $2", [
       estado,
       id_pedido,
     ]);
 
-    // Borrar productos anteriores
     await client.query("DELETE FROM detalle_pedido WHERE pedido_id = $1", [
       id_pedido,
     ]);
 
-    // Insertar productos nuevos
     for (const prod of productos) {
       await client.query(
         "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, subtotal) VALUES ($1, $2, $3, $4)",
@@ -443,12 +459,44 @@ async function editarPedidoAdmin(req, res) {
       );
     }
 
-    // Calcular total desde detalle_pedido
     const totalRes = await client.query(
       "SELECT SUM(subtotal) AS total FROM detalle_pedido WHERE pedido_id = $1",
       [id_pedido]
     );
     const total = totalRes.rows[0].total || 0;
+
+    if (estado === "Listo" || estado === "Entregado") {
+      const pedidoRes = await client.query(
+        "SELECT numero_pedido, qr, usuario_id FROM pedidos WHERE id = $1",
+        [id_pedido]
+      );
+      const { numero_pedido, qr, usuario_id } = pedidoRes.rows[0];
+
+      const clienteRes = await client.query(
+        "SELECT email FROM usuarios WHERE id = $1",
+        [usuario_id]
+      );
+      const emailCliente = clienteRes.rows[0]?.email;
+
+      if (emailCliente && estado === "Listo" && qr) {
+        await enviarMailPedido(emailCliente, numero_pedido, qr);
+      }
+
+      const mensaje =
+        estado === "Listo"
+          ? `Tu pedido ${numero_pedido} está listo para retirar`
+          : `Tu pedido ${numero_pedido} fue entregado`;
+
+      await client.query(
+        `INSERT INTO notificaciones (usuario_id, mensaje)
+         SELECT $1, $2
+         WHERE NOT EXISTS (
+           SELECT 1 FROM notificaciones
+           WHERE usuario_id = $1 AND mensaje = $2 AND leida = FALSE
+         )`,
+        [usuario_id, mensaje]
+      );
+    }
 
     await client.query("COMMIT");
 
@@ -486,7 +534,6 @@ function cancelarPedidoAdmin(req, res) {
   );
 }
 
-
 module.exports = {
   generarPedido,
   actualizarEstadoPedido,
@@ -501,5 +548,5 @@ module.exports = {
   verificarEntregaPorQR,
   crearPedidoAdmin,
   editarPedidoAdmin,
-  cancelarPedidoAdmin
+  cancelarPedidoAdmin,
 };
