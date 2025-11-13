@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
   origin: [
     'https://buffet-ecommerce-2t4sk4d1pj-brisa-valerio5s-projects.vercel.app',
-    'https://buffet-ecommerce-qer1l7tgd-julietas-projects-bb92a50b.vercel.app',
+    'https://buffet-ecommerce-julietas-projects-bb92a50b.vercel.app',
     'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -17,7 +17,7 @@ const corsOptions = {
 
 // Middleware CORS
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
+app.options('/*', cors(corsOptions));
 
 app.use(express.json());
 
