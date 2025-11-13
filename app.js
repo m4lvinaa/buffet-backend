@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware CORS (antes de las rutas)
 app.use(cors(corsOptions));
-app.options("/api/*", cors(corsOptions));
+app.options(/^\/api\/.*$/, cors(corsOptions));
 
 // Middleware JSON
 app.use(express.json());
